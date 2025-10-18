@@ -88,7 +88,7 @@ const Login = () => {
                                 value={formData.name}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="John Doe"
+                                placeholder="Tushar Seth"
                                 required={!isLogin}
                             />
                         </div>
@@ -103,7 +103,7 @@ const Login = () => {
                             value={formData.email}
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="john@example.com"
+                            placeholder="tusharseth@example.com"
                             required
                         />
                     </div>

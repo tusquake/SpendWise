@@ -5,9 +5,9 @@ spring:
 
   # PostgreSQL Database Configuration for Production
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/expense_tracker}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://dpg-d3l749j3fgac73abrvo0-a.oregon-postgres.render.com:5432/geotrackr
+    username: geotrackr_user
+    password: 4ldgg77xYGpOl3PNbJxPQxqjaTUrJ6Je
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -22,8 +22,9 @@ spring:
       ddl-auto: validate  # Don't auto-create in production
     properties:
       hibernate:
-        dialect: org.postgresql.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+        default_schema: spendwise
 
 # Server Configuration
 server:
