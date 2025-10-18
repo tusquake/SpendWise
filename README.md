@@ -4,6 +4,22 @@ A smart expense tracking application that uses AI to automatically categorize yo
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
+<b>Application Overview : </b>
+
+1. Login/Register
+<img width="1920" height="848" alt="image" src="https://github.com/user-attachments/assets/f0012c56-9706-4a10-9fe1-268635ed639d" />
+
+2. Dashboard
+<img width="1920" height="840" alt="image" src="https://github.com/user-attachments/assets/bddf6267-a45b-41c0-8d6a-fbe7048d9e20" />
+
+3. Add Transaction
+<img width="1920" height="835" alt="image" src="https://github.com/user-attachments/assets/09be23f7-af35-487c-8913-920cd0d15fb1" />
+
+4. Chatbot
+<img width="1920" height="842" alt="image" src="https://github.com/user-attachments/assets/e71405c5-19f8-4715-afcc-a39ea3a13060" />
+
+
+
 ## What is this project?
 
 This is a full-stack web application that helps you manage your personal finances. Instead of manually categorizing every expense, the AI does it for you. You can chat with an AI assistant to get insights about your spending patterns, see visual charts of where your money goes, and get predictions for future expenses.
