@@ -1,13 +1,13 @@
+# --- Production profile for Spendwise ---
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: production
 
-  # PostgreSQL Database Configuration for Production
   datasource:
-    url: jdbc:postgresql://dpg-d3l749j3fgac73abrvo0-a.oregon-postgres.render.com:5432/geotrackr
-    username: geotrackr_user
-    password: 4ldgg77xYGpOl3PNbJxPQxqjaTUrJ6Je
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://dpg-d3prvt63jp1c7386ojh0-a.oregon-postgres.render.com:5432/spendwise_prod_db}
+    username: ${DB_USER:spendwise_prod_db_user}
+    password: ${DB_PASSWORD:ICS0fTDuaGSpuxTMjRtBCIzpdaXswBNn}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -17,38 +17,19 @@ spring:
       max-lifetime: 1800000
 
   jpa:
-    show-sql: false
     hibernate:
       ddl-auto: validate  # Don't auto-create in production
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
         default_schema: spendwise
 
-# Server Configuration
-server:
-  port: ${PORT:8080}
-  error:
-    include-message: never
-    include-binding-errors: never
-    include-stacktrace: never
-  compression:
-    enabled: true
-    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
-    min-response-size: 1024
-
-# Logging Configuration
 logging:
   level:
-    com.finance.aiexpense: INFO
-    org.springframework.security: WARN
+    root: INFO
+    com.tushar.spendwise: INFO
     org.springframework.web: WARN
+    org.springframework.security: WARN
     org.hibernate: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/application.log
-    max-size: 10MB
-    max-history: 30
