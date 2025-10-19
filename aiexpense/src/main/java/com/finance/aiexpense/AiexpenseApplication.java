@@ -2,6 +2,9 @@ package com.finance.aiexpense;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.*;
 
 @SpringBootApplication
 public class AiexpenseApplication {
@@ -27,6 +30,22 @@ public class AiexpenseApplication {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace();
 			System.exit(1);
+		}
+	}
+
+	/**
+	 * Load Google Cloud credentials from environment (for Render or Cloud)
+	 */
+	@PostConstruct
+	public void loadGoogleCredentials() throws IOException {
+		String credsJson = System.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON");
+		if (credsJson != null) {
+			Path temp = Files.createTempFile("gcp-creds", ".json");
+			Files.writeString(temp, credsJson);
+			System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", temp.toString());
+			System.out.println("🔐 Google credentials loaded successfully (temp file: " + temp + ")");
+		} else {
+			System.err.println("⚠️ GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment!");
 		}
 	}
 
