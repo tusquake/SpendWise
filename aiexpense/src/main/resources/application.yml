@@ -12,6 +12,17 @@ spring:
           project-id: ${VERTEX_AI_PROJECT_ID:aiexpense-475508}
           location: ${VERTEX_AI_LOCATION:us-central1}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      enabled: true
+      show-details: when-authorized
+
 server:
   port: ${PORT:8080}
 
