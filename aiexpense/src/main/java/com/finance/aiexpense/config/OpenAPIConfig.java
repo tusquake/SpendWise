@@ -25,12 +25,12 @@ import io.swagger.v3.oas.annotations.servers.Server;
         ),
         servers = {
                 @Server(
-                        description = "Local Development Server",
-                        url = "http://localhost:8080"
+                        description = "Render Production Server",
+                        url = "https://spendwise-pgcx.onrender.com"
                 ),
                 @Server(
-                        description = "Production Server",
-                        url = "https://api.aiexpense.com"
+                        description = "Local Development Server",
+                        url = "http://localhost:8080"
                 )
         }
 )
