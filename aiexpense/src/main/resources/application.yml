@@ -1,117 +1,115 @@
 # ============================================================
-# 🌍 Common configuration (applies to all environments)
+# 🌍 Base Configuration (All Environments)
 # ============================================================
 spring:
   application:
-    name: spendwise
+    name: ai-expense-tracker
+
   jpa:
-    defer-datasource-initialization: true
     open-in-view: false
-  ai:
-    vertex:
-      ai:
-        gemini:
-          project-id: aiexpense-475508
-          location: us-central1
 
 server:
   port: ${PORT:8080}
-  error:
-    include-message: always
-    include-binding-errors: always
 
+# JWT Configuration
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
-  expiration: ${JWT_EXPIRATION:86400000}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  expiration: 86400000
+  refresh-expiration: 604800000
 
+# Gemini AI Configuration
 gemini:
   api:
     key: ${GEMINI_API_KEY:AIzaSyBrfsXe6d27fciTmIxHE43blVUAjBIDX0o}
     base-url: https://generativelanguage.googleapis.com/v1beta
-    model: gemini-2.5-flash
+    model: gemini-2.0-flash-exp
 
+# Swagger
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
 
-logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-  level:
-    root: INFO
-    com.finance.aiexpense: INFO
-
-# ============================================================
-# 💻 Development profile
-# ============================================================
 ---
+# ============================================================
+# 💻 Development Profile (Local)
+# ============================================================
 spring:
   config:
     activate:
       on-profile: dev
+
   datasource:
     url: jdbc:postgresql://localhost:5432/expense_tracker
     username: postgres
     password: 12345678
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 20000
-      maximum-pool-size: 5
+
   jpa:
-    show-sql: true
     hibernate:
       ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always
 
 logging:
   level:
-    root: INFO
     com.finance.aiexpense: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# ============================================================
-# 🚀 Production profile (Render)
-# ============================================================
 ---
+# ============================================================
+# 🚀 Production Profile (Render)
+# ============================================================
 spring:
   config:
     activate:
       on-profile: production
+
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://${DB_HOST:dpg-d3prvt63jp1c7386ojh0-a.oregon-postgres.render.com}:${DB_PORT:5432}/${DB_NAME:spendwise_prod_db}}
-    username: ${DB_USER:spendwise_prod_db_user}
-    password: ${DB_PASSWORD:ICS0fTDuaGSpuxTMjRtBCIzpdaXswBNn}
+    # Render provides these automatically
+    url: ${JDBC_DATABASE_URL:${spring.datasource.url}}
+    username: ${PGUSER:spendwise_prod_db_user}
+    password: ${PGPASSWORD:ICS0fTDuaGSpuxTMjRtBCIzpdaXswBNn}
     driver-class-name: org.postgresql.Driver
+
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 5  # Free tier limitation
+      minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update  # Safe for first deployment, change to 'validate' later
     show-sql: false
     properties:
       hibernate:
-        format_sql: false
-        jdbc.lob.non_contextual_creation: true
-        temp.use_jdbc_metadata_defaults: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
 
 logging:
   level:
     root: INFO
     com.finance.aiexpense: INFO
-    org.springframework.web: WARN
-    org.springframework.security: WARN
+    org.springframework: WARN
     org.hibernate: WARN
