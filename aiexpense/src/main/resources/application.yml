@@ -1,39 +1,37 @@
 # ============================================================
-# 🌍 Base Configuration (All Environments)
+# Common configuration (applies to all environments)
 # ============================================================
 spring:
   application:
     name: ai-expense-tracker
 
-  jpa:
-    open-in-view: false
-
 server:
   port: ${PORT:8080}
 
-# JWT Configuration
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: 86400000
   refresh-expiration: 604800000
 
-# Gemini AI Configuration
 gemini:
   api:
     key: ${GEMINI_API_KEY:AIzaSyBrfsXe6d27fciTmIxHE43blVUAjBIDX0o}
     base-url: https://generativelanguage.googleapis.com/v1beta
     model: gemini-2.0-flash-exp
 
-# Swagger
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
 ---
 # ============================================================
-# 💻 Development Profile (Local)
+# Development profile (local)
 # ============================================================
 spring:
   config:
@@ -55,12 +53,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-server:
-  error:
-    include-message: always
-    include-binding-errors: always
-    include-stacktrace: always
-
 logging:
   level:
     com.finance.aiexpense: DEBUG
@@ -69,7 +61,7 @@ logging:
 
 ---
 # ============================================================
-# 🚀 Production Profile (Render)
+# Production profile (Render)
 # ============================================================
 spring:
   config:
@@ -77,22 +69,18 @@ spring:
       on-profile: production
 
   datasource:
-    # Render provides these automatically
-    url: ${JDBC_DATABASE_URL:${spring.datasource.url}}
-    username: ${PGUSER:spendwise_prod_db_user}
-    password: ${PGPASSWORD:ICS0fTDuaGSpuxTMjRtBCIzpdaXswBNn}
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
     driver-class-name: org.postgresql.Driver
-
     hikari:
-      maximum-pool-size: 5  # Free tier limitation
+      maximum-pool-size: 5
       minimum-idle: 2
       connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
 
   jpa:
     hibernate:
-      ddl-auto: update  # Safe for first deployment, change to 'validate' later
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -105,11 +93,9 @@ server:
   error:
     include-message: never
     include-binding-errors: never
-    include-stacktrace: never
 
 logging:
   level:
     root: INFO
     com.finance.aiexpense: INFO
     org.springframework: WARN
-    org.hibernate: WARN
