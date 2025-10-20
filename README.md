@@ -7,7 +7,7 @@ A smart expense tracking application that uses AI to automatically categorize yo
 <b>Application Overview : </b>
 
 1. Login/Register
-<img width="1920" height="848" alt="image" src="https://github.com/user-attachments/assets/f0012c56-9706-4a10-9fe1-268635ed639d" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0fd1c520-7343-4760-aad9-1443b5471dd9" />
 
 2. Dashboard
 <img width="1920" height="840" alt="image" src="https://github.com/user-attachments/assets/bddf6267-a45b-41c0-8d6a-fbe7048d9e20" />
