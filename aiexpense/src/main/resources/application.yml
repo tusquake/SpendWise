@@ -2,6 +2,8 @@
 # Common configuration (applies to all environments)
 # ============================================================
 spring:
+  profiles:
+    active: dev
   application:
     name: ai-expense-tracker
 
@@ -12,16 +14,7 @@ spring:
           project-id: ${VERTEX_AI_PROJECT_ID:aiexpense-475508}
           location: ${VERTEX_AI_LOCATION:us-central1}
 
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: health,info
-#      base-path: /actuator
-#  endpoint:
-#    health:
-#      enabled: true
-#      show-details: when-authorized
+
 
 server:
   port: ${PORT:8080}
@@ -46,6 +39,11 @@ springdoc:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# OAuth2 Redirect URI for frontend
+app:
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/redirect}
 
 ---
 # ============================================================
@@ -117,3 +115,26 @@ logging:
     root: INFO
     com.finance.aiexpense: INFO
     org.springframework: WARN
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      geminiAI:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.RestClientException
+
+  timelimiter:
+    instances:
+      geminiAI:
+        timeoutDuration: 10s

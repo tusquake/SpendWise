@@ -3,13 +3,18 @@ package com.finance.aiexpense.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.aiexpense.config.GeminiConfig;
+import com.finance.aiexpense.exception.AIServiceException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -20,39 +25,55 @@ public class GeminiService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String generateContent(String prompt) {
-        try {
-            String url = String.format("%s/models/%s:generateContent?key=%s",
-                    geminiConfig.getBaseUrl(),
-                    geminiConfig.getModel(),
-                    geminiConfig.getApiKey());
+    @CircuitBreaker(name = "geminiAI", fallbackMethod = "generateContentFallback")
+    @TimeLimiter(name = "geminiAI")
+    @Cacheable(value = "aiResponses", key = "#prompt.hashCode()")
+    public CompletableFuture<String> generateContent(String prompt) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String url = String.format("%s/models/%s:generateContent?key=%s",
+                        geminiConfig.getBaseUrl(),
+                        geminiConfig.getModel(),
+                        geminiConfig.getApiKey());
 
-            Map<String, Object> requestBody = buildRequest(prompt);
+                Map<String, Object> requestBody = buildRequest(prompt);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    String.class
-            );
+                ResponseEntity<String> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.POST,
+                        entity,
+                        String.class
+                );
 
-            return extractTextFromResponse(response.getBody());
+                return extractTextFromResponse(response.getBody());
 
-        } catch (Exception e) {
-            log.error("Gemini API call failed", e);
-            throw new RuntimeException("Failed to generate AI response", e);
-        }
+            } catch (Exception e) {
+                log.error("Gemini API call failed", e);
+                throw new AIServiceException("AI service is temporarily unavailable", e);
+            }
+        });
+    }
+
+    // Fallback method when circuit is open
+    public CompletableFuture<String> generateContentFallback(String prompt, Exception e) {
+        log.warn("Circuit breaker activated. Using fallback response. Error: {}", e.getMessage());
+
+        String fallbackMessage =
+                "⚠️ AI service is temporarily unavailable. " +
+                        "We're working to restore it. Please try again in a few moments. " +
+                        "Your request has been noted.";
+
+        return CompletableFuture.completedFuture(fallbackMessage);
     }
 
     private Map<String, Object> buildRequest(String prompt) {
         Map<String, Object> request = new HashMap<>();
 
-        // Build contents
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
 
@@ -66,7 +87,6 @@ public class GeminiService {
 
         request.put("contents", contents);
 
-        // Add generation config
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", 0.7);
         generationConfig.put("topK", 40);
@@ -74,24 +94,6 @@ public class GeminiService {
         generationConfig.put("maxOutputTokens", 2048);
 
         request.put("generationConfig", generationConfig);
-
-        // Add safety settings
-        List<Map<String, String>> safetySettings = new ArrayList<>();
-        String[] categories = {
-                "HARM_CATEGORY_HARASSMENT",
-                "HARM_CATEGORY_HATE_SPEECH",
-                "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "HARM_CATEGORY_DANGEROUS_CONTENT"
-        };
-
-        for (String category : categories) {
-            Map<String, String> setting = new HashMap<>();
-            setting.put("category", category);
-            setting.put("threshold", "BLOCK_MEDIUM_AND_ABOVE");
-            safetySettings.add(setting);
-        }
-
-        request.put("safetySettings", safetySettings);
 
         return request;
     }

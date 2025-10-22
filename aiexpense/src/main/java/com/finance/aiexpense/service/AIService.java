@@ -47,7 +47,7 @@ public class AIService {
         );
 
         try {
-            String aiResponse = geminiService.generateContent(prompt);
+            String aiResponse = geminiService.generateContent(prompt).join(); // ✅ fixed
             return parseAIResponse(aiResponse, transactions);
         } catch (Exception e) {
             log.error("AI analysis failed, using fallback", e);
@@ -91,7 +91,7 @@ public class AIService {
         );
 
         try {
-            return geminiService.generateContent(prompt);
+            return geminiService.generateContent(prompt).join(); // ✅ fixed
         } catch (Exception e) {
             log.error("Insight generation failed", e);
             return generateFallbackInsight(totalSpending, categoryTotals);
@@ -113,7 +113,7 @@ public class AIService {
         );
 
         try {
-            return geminiService.generateContent(prompt);
+            return geminiService.generateContent(prompt).join(); // ✅ fixed
         } catch (Exception e) {
             log.error("Chat failed", e);
             return "I'm having trouble processing your request. Please try asking in a different way.";
@@ -147,7 +147,6 @@ public class AIService {
 
     private AIAnalysisResponse parseAIResponse(String content, List<TransactionDTO> transactions) {
         try {
-            // Try to extract JSON from response
             int jsonStart = content.indexOf("{");
             int jsonEnd = content.lastIndexOf("}") + 1;
 

@@ -1,4 +1,5 @@
 import {
+    Crown,
     IndianRupee,
     LogOut,
     MessageSquare,
@@ -70,15 +71,20 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+    const [isInsightLoading, setIsInsightLoading] = useState(false);
 
     const fetchInsights = async () => {
         try {
+            setIsInsightLoading(true); // start loading
             const response = await aiAPI.getInsights();
             setAiInsight(response.data.data || '');
         } catch (error) {
             console.error('Error fetching insights:', error);
+        } finally {
+            setIsInsightLoading(false); // stop loading
         }
     };
+
 
     const handleAddTransaction = async (e) => {
         e.preventDefault();
@@ -117,30 +123,54 @@ const Dashboard = () => {
         }
     };
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!chatInput.trim()) return;
 
         const userMessage = { type: 'user', text: chatInput };
-        setChatMessages([...chatMessages, userMessage]);
+        setChatMessages((prev) => [...prev, userMessage]);
         setChatInput('');
+        setIsLoading(true);
 
         try {
             const response = await aiAPI.chat(chatInput);
-            const botMessage = {
-                type: 'bot',
-                text: response.data.data || 'Sorry, I could not process that.',
-            };
-            setChatMessages((prev) => [...prev, botMessage]);
+
+            if (response.status === 429) {
+                // Rate limit exceeded
+                const rateLimitMessage = {
+                    type: 'bot',
+                    text: response.data.message,
+                    upgrade: true, // flag to show upgrade button
+                };
+                setChatMessages((prev) => [...prev, rateLimitMessage]);
+            } else if (response.status === 200) {
+                const botMessage = { type: 'bot', text: response.data.reply };
+                setChatMessages((prev) => [...prev, botMessage]);
+            } else {
+                const errorMessage = { type: 'bot', text: 'Something went wrong. Please try again.' };
+                setChatMessages((prev) => [...prev, errorMessage]);
+            }
         } catch (error) {
-            console.error('Chat error:', error);
-            const errorMessage = {
-                type: 'bot',
-                text: 'Sorry, I encountered an error. Please try again.',
-            };
-            setChatMessages((prev) => [...prev, errorMessage]);
+            if (error.response && error.response.status === 429) {
+                const rateLimitMessage = {
+                    type: 'bot',
+                    text: error.response.data.message,
+                    upgrade: true,
+                };
+                setChatMessages((prev) => [...prev, rateLimitMessage]);
+            } else {
+                const errorMessage = { type: 'bot', text: 'Unable to connect. Please try again later.' };
+                setChatMessages((prev) => [...prev, errorMessage]);
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
+
+
+
 
     const handleLogout = () => {
         logout();
@@ -168,6 +198,7 @@ const Dashboard = () => {
         { month: 'Oct', amount: totalSpending },
     ];
 
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -193,15 +224,42 @@ const Dashboard = () => {
                                 SpendWise
                             </span>
                         </div>
+
                         <div className="flex items-center space-x-4">
-                            <span className="text-gray-700">Welcome, {user?.name || 'User'}</span>
+                            <div className="flex items-center space-x-4">
+                                {!user?.isPremium && (
+                                    <button
+                                        onClick={() => navigate('/upgrade')}
+                                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition flex items-center"
+                                    >
+                                        <Crown size={20} className="mr-2" />
+                                        Upgrade to Premium
+                                    </button>
+                                )}
+                                <span className="text-gray-700">Welcome, {user?.name || 'User'}</span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center text-gray-600 hover:text-red-600 transition"
+                                >
+                                    <LogOut size={20} className="mr-1" />
+                                    Logout
+                                </button>
+                            </div>
+                            {/* <span className="text-gray-700">
+                                Welcome,&nbsp;
+                                {user?.name
+                                    ? user.name
+                                    : user?.email
+                                        ? user.email.split('@')[0]
+                                        : 'User'}
+                            </span>
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center text-gray-600 hover:text-red-600 transition"
                             >
                                 <LogOut size={20} className="mr-1" />
                                 Logout
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>
@@ -209,7 +267,20 @@ const Dashboard = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* AI Insight Banner */}
-                {aiInsight && (
+                {isInsightLoading ? (
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-6 mb-8 text-white shadow-lg animate-pulse">
+                        <div className="flex items-start">
+                            <div className="mr-3 mt-1 flex-shrink-0">
+                                <div className="w-6 h-6 bg-blue-300 rounded-full"></div>
+                            </div>
+                            <div className="flex-1 space-y-2">
+                                <div className="h-5 w-1/3 bg-blue-300 rounded"></div>
+                                <div className="h-4 w-2/3 bg-blue-200 rounded"></div>
+                                <div className="h-4 w-1/2 bg-blue-200 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                ) : aiInsight && (
                     <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-6 mb-8 text-white shadow-lg">
                         <div className="flex items-start">
                             <TrendingUp className="mr-3 mt-1 flex-shrink-0" size={24} />
@@ -219,6 +290,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
+
                 )}
 
                 {/* Summary Cards */}
@@ -597,6 +669,7 @@ const Dashboard = () => {
 
             {showChatbot && (
                 <div className="fixed bottom-6 right-6 w-96 bg-white rounded-xl shadow-2xl z-50">
+                    {/* Chat Header */}
                     <div className="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between items-center">
                         <div className="flex items-center">
                             <MessageSquare className="mr-2" size={24} />
@@ -610,12 +683,12 @@ const Dashboard = () => {
                         </button>
                     </div>
 
+                    {/* Chat Messages */}
                     <div className="h-96 overflow-y-auto p-4 space-y-3">
                         {chatMessages.map((msg, idx) => (
                             <div
                                 key={idx}
-                                className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'
-                                    }`}
+                                className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div
                                     className={`max-w-xs px-4 py-2 rounded-lg ${msg.type === 'user'
@@ -623,12 +696,35 @@ const Dashboard = () => {
                                         : 'bg-gray-200 text-gray-800'
                                         }`}
                                 >
-                                    {msg.text}
+                                    <p>{msg.text}</p>
+
+                                    {/* Show upgrade button if rate-limit exceeded */}
+                                    {msg.upgrade && (
+                                        <button
+                                            onClick={() => navigate('/upgrade')}
+                                            className="mt-2 bg-yellow-500 text-white px-3 py-1 rounded-lg font-semibold hover:bg-yellow-600 transition flex items-center"
+                                        >
+                                            <Crown size={16} className="mr-1" />
+                                            Upgrade to Premium
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
+
+                        {/* Busy Indicator */}
+                        {isLoading && (
+                            <div className="flex justify-start">
+                                <div className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg text-gray-600">
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.2s]"></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.4s]"></div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
+                    {/* Input Box */}
                     <form onSubmit={handleSendMessage} className="p-4 border-t">
                         <div className="flex space-x-2">
                             <input
@@ -637,10 +733,13 @@ const Dashboard = () => {
                                 onChange={(e) => setChatInput(e.target.value)}
                                 placeholder="Ask about your expenses..."
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={isLoading}
                             />
                             <button
                                 type="submit"
-                                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                                disabled={isLoading}
+                                className={`bg-blue-600 text-white p-2 rounded-lg transition ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+                                    }`}
                             >
                                 <Send size={20} />
                             </button>
@@ -648,6 +747,8 @@ const Dashboard = () => {
                     </form>
                 </div>
             )}
+
+
         </div>
     );
 };

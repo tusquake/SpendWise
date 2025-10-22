@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 @Repository
@@ -38,4 +39,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("user") User user,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    List<Transaction> findByUserAndDateAfterOrderByDateDesc(User user, LocalDate fromDate);
 }

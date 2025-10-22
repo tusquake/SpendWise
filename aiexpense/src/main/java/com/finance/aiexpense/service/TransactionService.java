@@ -8,6 +8,8 @@ import com.finance.aiexpense.exception.ResourceNotFoundException;
 import com.finance.aiexpense.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class TransactionService {
     private final ModelMapper modelMapper;
 
     @Transactional
+    @CacheEvict(value = {"transactions", "userStats", "insights"}, allEntries = true)
     public TransactionDTO addTransaction(TransactionRequest request, User user) {
         Transaction transaction = Transaction.builder()
                 .user(user)
@@ -37,6 +40,7 @@ public class TransactionService {
         return convertToDTO(transaction);
     }
 
+    @Cacheable(value = "transactions", key = "#user.id")
     public List<TransactionDTO> getAllTransactions(User user) {
         return transactionRepository.findByUserOrderByDateDesc(user)
                 .stream()
@@ -44,23 +48,25 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getTransactionsByDateRange(
-            User user, LocalDate startDate, LocalDate endDate) {
+    // ✅ Get recent N months of transactions
+    public List<TransactionDTO> getRecentTransactions(User user, int months) {
+        LocalDate fromDate = LocalDate.now().minusMonths(months);
+        return transactionRepository.findByUserAndDateAfterOrderByDateDesc(user, fromDate)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ Get transactions in a date range
+    public List<TransactionDTO> getTransactionsByDateRange(User user, LocalDate startDate, LocalDate endDate) {
         return transactionRepository.findByUserAndDateBetweenOrderByDateDesc(user, startDate, endDate)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionDTO> getRecentTransactions(User user, int months) {
-        LocalDate startDate = LocalDate.now().minusMonths(months);
-        return transactionRepository.findRecentTransactions(user, startDate)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
     @Transactional
+    @CacheEvict(value = {"transactions", "userStats", "insights"}, allEntries = true)
     public void deleteTransaction(Long id, User user) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
@@ -72,7 +78,9 @@ public class TransactionService {
         transactionRepository.delete(transaction);
     }
 
+    // ✅ Update transaction category
     @Transactional
+    @CacheEvict(value = {"transactions", "userStats", "insights"}, allEntries = true)
     public TransactionDTO updateTransactionCategory(Long id, String category, User user) {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));

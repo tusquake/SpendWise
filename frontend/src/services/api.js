@@ -18,3 +18,17 @@ export const aiAPI = {
     getInsights: () => axiosInstance.get('/ai/insights'),
     chat: (query) => axiosInstance.post('/ai/chatbot', { query }),
 };
+
+export const paymentAPI = {
+    // Get subscription plans
+    getPlans: () => axiosInstance.get('/payments/plans'),
+
+    // Create payment order (returns checkout URL or Razorpay details)
+    createOrder: (data) => axiosInstance.post('/payments/create-order', data),
+
+    // Verify payment after user completes checkout
+    verifyPayment: (data) => axiosInstance.post('/payments/verify', data),
+
+    // Get payment history
+    getPaymentHistory: () => axiosInstance.get('/payments/history'),
+};
