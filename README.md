@@ -38,6 +38,24 @@ A smart expense tracking application that uses AI to automatically categorize yo
 9. Payment Integration
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8eb4870e-a6b8-4064-a5bd-56897daccf0d" />
 
+## Data Model Relationships
+
+- **Users → Transactions**: One-to-many  
+  A user can have multiple transactions.
+
+- **Users → Payments**: One-to-many  
+  A user can make multiple payments.
+
+- **Users → Rate Limits**: One-to-many  
+  Tracks rate limit buckets per user.
+
+- **Payments → Transactions**: Many-to-one  
+  A payment can reference a transaction.
+
+  <img width="1562" height="741" alt="image" src="https://github.com/user-attachments/assets/708473cc-5f7b-4174-86e1-96234d5c9ebc" />
+
+
+
 ## What is this project?
 
 SpendWise is a full-stack expense tracking application I built to solve the problem of manual transaction categorization. The core idea is simple - you add transactions, and the AI handles the categorization automatically. I integrated Google's Gemini API for the AI capabilities and built the entire authentication and payment flow from scratch.

@@ -11,8 +11,8 @@ spring:
     vertex:
       ai:
         gemini:
-          project-id: ${VERTEX_AI_PROJECT_ID:aiexpense-475508}
-          location: ${VERTEX_AI_LOCATION:us-central1}
+          project-id: ${VERTEX_AI_PROJECT_ID}
+          location: ${VERTEX_AI_LOCATION}
 
 
 
@@ -20,13 +20,13 @@ server:
   port: ${PORT:8080}
 
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET}
   expiration: 86400000
   refresh-expiration: 604800000
 
 gemini:
   api:
-    key: ${GEMINI_API_KEY:AIzaSyBrfsXe6d27fciTmIxHE43blVUAjBIDX0o}
+    key: ${GEMINI_API_KEY}
     base-url: https://generativelanguage.googleapis.com/v1beta
     model: gemini-2.5-flash
 
