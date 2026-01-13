@@ -1,28 +1,31 @@
 package com.finance.aiexpense;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.*;
 
+@Slf4j
 @SpringBootApplication
 public class AiexpenseApplication {
 
 	public static void main(String[] args) {
+
 		printEnvironmentInfo();
 		fixDatabaseUrl();
+
 		try {
 			SpringApplication.run(AiexpenseApplication.class, args);
+			log.info("Application started successfully!");
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Application failed to start!", e);
+			log.error("Error: {}", e.getMessage());
 			System.exit(1);
 		}
 	}
 
-	/**
-	 * Load Google Cloud credentials from environment (for Render or Cloud)
-	 */
 	@PostConstruct
 	public void loadGoogleCredentials() throws IOException {
 		String credsJson = System.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON");
@@ -30,35 +33,28 @@ public class AiexpenseApplication {
 			Path temp = Files.createTempFile("gcp-creds", ".json");
 			Files.writeString(temp, credsJson);
 			System.setProperty("GOOGLE_APPLICATION_CREDENTIALS", temp.toString());
-			System.out.println("Google credentials loaded successfully (temp file: " + temp + ")");
+			log.info("Google credentials loaded successfully (temp file: {})", temp);
 		} else {
-			System.err.println("GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment!");
+			log.warn("GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment!");
 		}
 	}
 
-	/**
-	 * Print environment information for debugging
-	 */
 	private static void printEnvironmentInfo() {
-		// Check CORRECT Spring Boot variable name
 		String springProfilesActive = System.getenv("SPRING_PROFILES_ACTIVE");
 		String port = System.getenv("PORT");
 
-		System.out.println("SPRING_PROFILES_ACTIVE: " + (springProfilesActive != null ? springProfilesActive : "not set"));
-		System.out.println("Server Port: " + (port != null ? port : "8080 (default)"));
+		log.info("SPRING_PROFILES_ACTIVE: {}", springProfilesActive != null ? springProfilesActive : "not set");
+		log.info("Server Port: {}", port != null ? port : "8080 (default)");
 
-		// Also check if wrong variable name is being used
 		String wrongVariable = System.getenv("SPRING_PROFILE");
 		if (wrongVariable != null) {
-			System.err.println("WARNING: Found SPRING_PROFILE=" + wrongVariable);
-			System.err.println("This is WRONG! Change it to SPRING_PROFILES_ACTIVE in Render");
+			log.warn("WARNING: Found SPRING_PROFILE={}", wrongVariable);
+			log.warn("This is WRONG! Change it to SPRING_PROFILES_ACTIVE in Render");
 		}
 	}
 
-	/**
-	 * Fix Render's DATABASE_URL format if provided
-	 */
 	private static void fixDatabaseUrl() {
+		log.info("Database Configuration:");
 
 		String dbUrl = System.getenv("DATABASE_URL");
 		String pgHost = System.getenv("PGHOST");
@@ -68,7 +64,7 @@ public class AiexpenseApplication {
 		String pgPassword = System.getenv("PGPASSWORD");
 
 		if (dbUrl != null) {
-			System.out.println("   Found DATABASE_URL: " + maskPassword(dbUrl));
+			log.info("Found DATABASE_URL: {}", maskPassword(dbUrl));
 
 			if (dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://")) {
 				String jdbcUrl = dbUrl
@@ -76,20 +72,25 @@ public class AiexpenseApplication {
 						.replace("postgresql://", "jdbc:postgresql://");
 
 				System.setProperty("spring.datasource.url", jdbcUrl);
+				log.info("Converted to: {}", maskPassword(jdbcUrl));
 				extractCredentials(dbUrl);
 			} else if (dbUrl.startsWith("jdbc:postgresql://")) {
 				System.setProperty("spring.datasource.url", dbUrl);
+				log.info("Already in JDBC format");
 			}
 		} else if (pgHost != null && pgPort != null && pgDatabase != null) {
 			String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", pgHost, pgPort, pgDatabase);
+			log.info("Using PG variables:");
+			log.info("- PGHOST: {}", pgHost);
+			log.info("- PGPORT: {}", pgPort);
+			log.info("- PGDATABASE: {}", pgDatabase);
+			log.info("- PGUSER: {}", pgUser);
+			log.info("Constructed URL: {}", jdbcUrl);
 		} else {
-			System.out.println("   Using configuration from application.yml");
+			log.info("Using configuration from application.yml");
 		}
 	}
 
-	/**
-	 * Extract username and password from DATABASE_URL
-	 */
 	private static void extractCredentials(String dbUrl) {
 		try {
 			if (dbUrl.contains("@")) {
@@ -104,16 +105,16 @@ public class AiexpenseApplication {
 
 					System.setProperty("spring.datasource.username", username);
 					System.setProperty("spring.datasource.password", password);
+
+					log.info("Username: {}", username);
+					log.info("Password: ****");
 				}
 			}
 		} catch (Exception e) {
-			System.err.println(" Could not extract credentials: " + e.getMessage());
+			log.warn("Could not extract credentials: {}", e.getMessage());
 		}
 	}
 
-	/**
-	 * Mask password in URL for logging
-	 */
 	private static String maskPassword(String url) {
 		if (url == null) return null;
 		return url.replaceAll(":(.*?)@", ":****@");
